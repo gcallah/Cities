@@ -1,0 +1,8 @@
+agents.md
+
+*.swp
+
+~*
+
+.deck-cache/
+.DS_Store
