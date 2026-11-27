@@ -334,6 +334,10 @@ section.slide .image-row img {
     min-width: 0;
 }
 
+/* Source of a quotation on a slide */
+.cite { font-size: 0.9em; color: var(--muted); }
+.cite cite { font-style: italic; }
+
 aside.notes {
     margin-top: 1rem;
     padding: 0.5rem 1rem;
