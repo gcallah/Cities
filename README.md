@@ -18,6 +18,10 @@ the text of each deck in `slides/<deck>.html`, its images in `lectures/<deck>/`.
 - `make extract` re-reads the decks and **overwrites** `slides/` and the slide
   images, losing any hand edits. Needs `python-pptx` and, for old `.ppt`/`.key`
   decks, Keynote (conversions are cached in `.deck-cache/`, gitignored).
+- `make og-image` redraws `graphics/og-image.jpg`, the preview picture shown when
+  a link to the site is shared, from the backdrop painting, the site title and the
+  theme colours. Run it after changing any of those. Every page links to it in its
+  Open Graph tags, which use the absolute address `SITE_URL` in `bin/build.py`.
 
 Override the source location with `make html SRC=...`. Requires `pandoc` and
 Pillow (`pip install pillow python-pptx`).

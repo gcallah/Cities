@@ -109,6 +109,8 @@ DESCRIPTION = ("Is there a common set of social institutions or environments tha
 
 SITE_TITLE = "Cities, Culture and Economy"
 TAGLINE = "What Is a City?"
+SITE_URL = "https://gcallah.github.io/Cities/"  # absolute links for social-media previews
+OG_IMAGE = "graphics/og-image.jpg"  # drawn by bin/og_image.py
 FONTS_URL = ("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,800"
              "&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400"
              "&family=Public+Sans:wght@500;600&display=swap")
@@ -161,11 +163,12 @@ def esc(text):
     return html.escape(text, quote=True)
 
 
-def page(title, body, root="", body_class="", hero=None):
+def page(title, body, root="", body_class="", hero=None, path=""):
     """Wrap body in the site chrome.
 
     root:  relative path from this page to the site root ("" or "../").
     hero:  optional (kicker, heading, subtitle) for the page header.
+    path:  this page's path from the site root, for its og:url.
     """
     hero_html = ""
     if hero:
@@ -182,6 +185,17 @@ def page(title, body, root="", body_class="", hero=None):
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{esc(doc_title)}</title>
+    <meta name="description" content="{esc(FOOTER)}">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="{esc(SITE_TITLE)}">
+    <meta property="og:title" content="{esc(doc_title)}">
+    <meta property="og:description" content="{esc(FOOTER)}">
+    <meta property="og:url" content="{SITE_URL}{path}">
+    <meta property="og:image" content="{SITE_URL}{OG_IMAGE}">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="{esc(SITE_TITLE)}: Vermeer's View of Delft">
+    <meta name="twitter:card" content="summary_large_image">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="{FONTS_URL}">
@@ -626,7 +640,7 @@ def write_lectures(out, decks, built):
         kicker = esc(topic_number(ti)) if topic else "Lecture"
         sub = esc(topic["title"]) if topic else f"{len(toc)} slides"
         (outdir / f"{slug}.html").write_text(
-            page(title, content, root="../", body_class="lecture",
+            page(title, content, root="../", path=f"{outdir.name}/{slug}.html", body_class="lecture",
                  hero=(kicker, esc(title), sub)),
             encoding="utf-8")
 
@@ -654,7 +668,7 @@ def build_handouts(src, out, built):
         related = (f'<p class="related"><span>Goes with:</span> {" ".join(chips)}</p>'
                    if chips else "")
         (outdir / f"{slug}.html").write_text(
-            page(title, f'{related}\n<article class="paper">\n{body}\n</article>', root="../",
+            page(title, f'{related}\n<article class="paper">\n{body}\n</article>', root="../", path=f"{outdir.name}/{slug}.html",
                  body_class="handout",
                  hero=(esc(topic_number(ti)) if topic else "Handout", esc(title),
                        esc(topic["title"]) if topic else "")),
@@ -691,7 +705,7 @@ def build_quizzes(src, out):
         title = first_line(path).split(":", 1)[-1].strip()
         body = pandoc_html(path, outdir / slug, slug)
         (outdir / f"{slug}.html").write_text(
-            page(title, f'<article class="paper">\n{body}\n</article>', root="../",
+            page(title, f'<article class="paper">\n{body}\n</article>', root="../", path=f"{outdir.name}/{slug}.html",
                  body_class="quiz", hero=("Quizzes and exams", esc(title), "")),
             encoding="utf-8")
         entries.append((f"quizzes/{slug}.html", title))

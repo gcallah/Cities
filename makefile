@@ -16,6 +16,10 @@ html: FORCE
 extract: FORCE
 	python3 bin/build.py --src "$(SRC)" --extract
 
+# Redraw graphics/og-image.jpg, the preview shown when a link to the site is shared.
+og-image: FORCE
+	python3 bin/og_image.py
+
 # Removes generated pages only; saved slides and their images are kept.
 clean: FORCE
 	rm -rf lectures/*.html handouts spreadsheets quizzes gallery index.html
