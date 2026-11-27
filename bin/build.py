@@ -196,6 +196,10 @@ def page(title, body, root="", body_class="", hero=None, path=""):
     <meta property="og:image:height" content="630">
     <meta property="og:image:alt" content="{esc(SITE_TITLE)}: Vermeer's View of Delft">
     <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{esc(doc_title)}">
+    <meta name="twitter:description" content="{esc(FOOTER)}">
+    <meta name="twitter:image" content="{SITE_URL}{OG_IMAGE}">
+    <meta name="twitter:image:alt" content="{esc(SITE_TITLE)}: Vermeer's View of Delft">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="{FONTS_URL}">
