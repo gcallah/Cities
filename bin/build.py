@@ -1,16 +1,17 @@
 #!/usr/bin/env python3
-"""Build the "What Is a City?" static site from course material kept elsewhere.
+"""Build the "Cities, Culture and Economy" static site from course material kept elsewhere.
 
 Collects:
-  * lecture decks (.pptx; .ppt/.key are first converted to .pptx by Keynote,
-    cached in .deck-cache/)       -> lectures/<slug>.html + lectures/<slug>/ images
+  * lecture slides saved in slides/<slug>.html -> lectures/<slug>.html
+    (with --extract, first re-reads the decks: .pptx directly, .ppt/.key via
+    Keynote, cached in .deck-cache/; images go to lectures/<slug>/)
   * handouts (.docx, .rtf, .txt)  -> handouts/<slug>.html (via pandoc)
   * spreadsheets (.xlsx)          -> spreadsheets/
   * quizzes                       -> quizzes/<slug>.html (via pandoc)
   * photographs                   -> gallery/ (downscaled)
 and writes index.html, organised around the order of the course.
 
-Usage: python3 bin/build.py [--src DIR] [--out DIR]
+Usage: python3 bin/build.py [--src DIR] [--out DIR] [--extract]
 Needs: python-pptx and Pillow (pip install python-pptx pillow), pandoc, and on macOS
        Keynote (to convert .ppt/.key decks) and sips.
 """
@@ -106,8 +107,8 @@ DESCRIPTION = ("Is there a common set of social institutions or environments tha
 
 # ---------------------------------------------------------------- site chrome
 
-SITE_TITLE = "What Is a City?"
-COURSE_NAME = "Cities, Culture, and the Economy"
+SITE_TITLE = "Cities, Culture and Economy"
+TAGLINE = "What Is a City?"
 FONTS_URL = ("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,800"
              "&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400"
              "&family=Public+Sans:wght@500;600&display=swap")
@@ -115,22 +116,28 @@ BACKDROP_CREDIT = ("Background: Johannes Vermeer, <cite>View of Delft</cite> (c.
                    "Mauritshuis, The Hague. Public domain, via "
                    '<a href="https://commons.wikimedia.org/wiki/File:Vermeer-view-of-delft.jpg">'
                    "Wikimedia Commons</a>. Photographs of Siena by Gene Callahan.")
-FOOTER = (f"{COURSE_NAME}: lectures, handouts and quizzes from a course on cities, "
+FOOTER = (f"{SITE_TITLE}: lectures, handouts and quizzes from a course on cities, "
           "from the first towns to Jane Jacobs.")
 N_CHART_SERIES = 4  # chart series colours are --series-0 .. --series-3 in style.css
 MAX_IMAGE_PX = 1280  # longest side of images published on the site
 PNG_TO_JPEG_BYTES = 300_000  # opaque PNGs bigger than this are photos: re-encode as JPEG
 JPEG_QUALITY = 80
 CACHE_DIR = ".deck-cache"  # under the output dir; gitignored
+SLIDES_DIR = "slides"      # saved slide text, one file per deck; edit these to fix slides
+SLIDES_HEADER = ("<!-- Saved from the lecture deck by `make extract`; `make html` builds the lecture\n"
+                 "     page from this file. Edit it to fix slides (each slide's title is its <h2>).\n"
+                 "     Running `make extract` again overwrites it. -->\n")
 
 # Keynote opens .ppt and .key files and exports them as .pptx.
 TO_PPTX_SCRIPT = """
 on run argv
-  tell application "Keynote"
-    set d to open (POSIX file (item 1 of argv))
-    export d to (POSIX file (item 2 of argv)) as Microsoft PowerPoint
-    close d saving no
-  end tell
+  with timeout of 900 seconds -- opening an old .ppt can take minutes
+    tell application "Keynote"
+      set d to open (POSIX file (item 1 of argv))
+      export d to (POSIX file (item 2 of argv)) as Microsoft PowerPoint
+      close d saving no
+    end tell
+  end timeout
 end run
 """
 
@@ -358,6 +365,19 @@ def first_title_like(slide):
     return None
 
 
+def image_row(slide):
+    """Return a slide's pictures if there are several and all sit side by side
+    (their vertical extents overlap); otherwise []."""
+    pics = [sh for sh in slide.shapes if sh.shape_type == MSO_SHAPE_TYPE.PICTURE]
+    if len(pics) < 2:
+        return []
+    for a in pics:
+        for b in pics:
+            if a is not b and (a.top >= b.top + b.height or b.top >= a.top + a.height):
+                return []
+    return pics
+
+
 def deck_pptx(path, cache):
     """Return a .pptx for a deck, converting .ppt/.key through Keynote (cached)."""
     if path.suffix.lower() == ".pptx":
@@ -422,6 +442,16 @@ class Deck:
             parts.append(text_frame_html(shape.text_frame))
         return "\n".join(filter(None, parts))
 
+    def row_html(self, row, slide_width):
+        """Pictures placed side by side on the slide, kept in one row at their slide widths."""
+        imgs = []
+        for shape in sorted(row, key=lambda sh: sh.left):
+            tag = self.image_html(shape)
+            if tag:
+                width = 100 * shape.width / slide_width
+                imgs.append(tag.replace("<img ", f'<img style="--slide-width: {width:.0f}%" ', 1))
+        return f'<div class="image-row">\n{chr(10).join(imgs)}\n</div>' if imgs else ""
+
     def build(self):
         """Return (deck title, [(slide num, slide title)], slides html)."""
         prs = Presentation(self.src)
@@ -439,7 +469,16 @@ class Deck:
                 title_shape = first_title_like(slide)
                 title = title_shape.text_frame.text.strip() if title_shape is not None else ""
             title_id = title_shape.shape_id if title_shape is not None and title else None
-            body = "\n".join(filter(None, (self.shape_html(s, title_id) for s in slide.shapes)))
+            row = image_row(slide)
+            row_ids = [sh.shape_id for sh in row]
+            parts = []
+            for shape in slide.shapes:
+                if shape.shape_id in row_ids:
+                    if shape.shape_id == row_ids[0]:
+                        parts.append(self.row_html(row, prs.slide_width))
+                    continue
+                parts.append(self.shape_html(shape, title_id))
+            body = "\n".join(filter(None, parts))
             title = re.sub(r"\s+", " ", title) or f"Slide {num}"
             if deck_title is None:
                 deck_title = title
@@ -519,10 +558,15 @@ def related_links(topic, root, built, exclude=None):
 
 # ---------------------------------------------------------------- builders
 
-def build_lectures(src, out):
+def extract_lectures(src, out):
+    """Read each deck once: slide text -> slides/<slug>.html, images -> lectures/<slug>/.
+
+    Overwrites the saved slides, including any hand edits made to them.
+    """
+    slides_dir = out / SLIDES_DIR
+    slides_dir.mkdir(parents=True, exist_ok=True)
     outdir = out / "lectures"
     outdir.mkdir(parents=True, exist_ok=True)
-    built = {}
     for slug, rel in DECKS.items():
         path = src / rel
         if not path.exists():
@@ -530,8 +574,30 @@ def build_lectures(src, out):
             continue
         deck = Deck(deck_pptx(path, out / CACHE_DIR), slug, outdir)
         title, toc, body = deck.build()
-        built[slug] = (title, toc, body)
+        (slides_dir / f"{slug}.html").write_text(SLIDES_HEADER + body + "\n", encoding="utf-8")
         print(f"  {rel}: {len(toc)} slides, {deck.n_images} images")
+
+
+SLIDE_HEADING = re.compile(r'<h2><a class="num" href="#s(\d+)">\d+</a> (.*?)</h2>')
+
+
+def load_lectures(out):
+    """Read the saved slides. Returns {slug: (deck title, [(num, title)], body html)};
+    the deck title is the first slide's title."""
+    built = {}
+    for slug in DECKS:
+        path = out / SLIDES_DIR / f"{slug}.html"
+        if not path.exists():
+            warn(f"no saved slides for {slug}: run `make extract`")
+            continue
+        body = path.read_text(encoding="utf-8")
+        body = body[len(SLIDES_HEADER):] if body.startswith(SLIDES_HEADER) else body
+        toc = [(int(n), html.unescape(t)) for n, t in SLIDE_HEADING.findall(body)]
+        if not toc:
+            warn(f"{path}: no slides found")
+            continue
+        built[slug] = (toc[0][1], toc, body)
+        print(f"  {slug}: {len(toc)} slides")
     return built
 
 
@@ -705,7 +771,7 @@ def build_index(out, decks, built, quizzes, gallery):
 </section>"""
     (out / "index.html").write_text(
         page(SITE_TITLE, body, body_class="home",
-             hero=(esc(COURSE_NAME), SITE_TITLE,
+             hero=(esc(TAGLINE), SITE_TITLE,
                    "How cities arise, why they flourish, and what happens when planners try "
                    "to design them from above: from the polis to Le Corbusier, Hayek and "
                    "Jane Jacobs.")),
@@ -734,6 +800,9 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--src", type=Path, default=DEFAULT_SRC)
     ap.add_argument("--out", type=Path, default=Path(__file__).resolve().parent.parent)
+    ap.add_argument("--extract", action="store_true",
+                    help="re-read the lecture decks into slides/ and lectures/<slug>/ "
+                         "(overwrites hand edits to the saved slides)")
     args = ap.parse_args()
     if not args.src.is_dir():
         sys.exit(f"source directory not found: {args.src}")
@@ -741,8 +810,11 @@ def main():
     CSS_VERSION = hashlib.sha1(css.encode()).hexdigest()[:8]
     CARD_COLOUR = css_colour(css, "card")
 
+    if args.extract:
+        print("Extracting decks:")
+        extract_lectures(args.src, args.out)
     print("Lectures:")
-    decks = build_lectures(args.src, args.out)
+    decks = load_lectures(args.out)
     print("Spreadsheets:")
     built = {
         "decks": {s: (f"lectures/{s}.html", d[0]) for s, d in decks.items()},

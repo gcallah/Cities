@@ -1,21 +1,26 @@
 # Cities
 
-Material for my course on cities: *What Is a City?* (Cities, Culture, and the Economy).
+Material for my course on cities: *Cities, Culture and Economy* ("What Is a City?").
 
 Course site: https://gcallah.github.io/Cities/
 
 ## Building the site
 
-The site is generated from course material kept outside this repo, in
-`~/Documents/CoursesTaught/CitiesCourse`: lecture decks (`.ppt`, `.pptx`), a
-handout (`.txt`), quizzes (`.docx`) and photographs of Siena.
+Handouts (`.txt`), quizzes (`.docx`) and photographs of Siena come from course
+material kept outside this repo, in `~/Documents/CoursesTaught/CitiesCourse`.
+Lecture slides were read from the decks there once and saved in the repo:
+the text of each deck in `slides/<deck>.html`, its images in `lectures/<deck>/`.
 
-Run `make html` to regenerate `index.html`, `lectures/`, `handouts/`, `quizzes/`
-and `gallery/`. Override the source location with `make html SRC=...`.
-Requires `pandoc`, `python-pptx` and Pillow (`pip install python-pptx pillow`),
-and, on macOS, Keynote: old `.ppt`/`.key` decks are converted to `.pptx` through
-Keynote and cached in `.deck-cache/` (gitignored; `make clean-cache` clears it).
-Slide images are scaled down and large photos re-encoded as JPEG.
+- `make html` rebuilds the site (`index.html`, `lectures/*.html`, `handouts/`,
+  `quizzes/`, `gallery/`) from those saved slides; it never opens the decks.
+  To fix a slide, edit `slides/<deck>.html` (each slide's title is its `<h2>`)
+  and run `make html`.
+- `make extract` re-reads the decks and **overwrites** `slides/` and the slide
+  images, losing any hand edits. Needs `python-pptx` and, for old `.ppt`/`.key`
+  decks, Keynote (conversions are cached in `.deck-cache/`, gitignored).
+
+Override the source location with `make html SRC=...`. Requires `pandoc` and
+Pillow (`pip install pillow python-pptx`).
 
 What goes on the site, and in what order, is set by the tables at the top of
 `bin/build.py`: `DECKS`, `HANDOUTS`, `SPREADSHEETS`, `QUIZZES`, `GALLERY` and the
