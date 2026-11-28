@@ -217,6 +217,7 @@ def page(title, body, root="", body_class="", hero=None, path=""):
     <a href="{root}index.html#handouts">Handouts</a>
     <a href="{root}index.html#gallery">Siena</a>
     <a href="{root}index.html#quizzes">Quizzes</a>
+    <a href="{root}index.html#credit">Credit</a>
   </span>
 </nav>
 <div class="sheet">
@@ -789,6 +790,10 @@ def build_index(out, decks, built, quizzes, gallery):
 <div class="gallery">
 {photos}
 </div>
+</section>
+<section id="credit">
+<h2>Credit</h2>
+<p>Thanks to Sanford Ikeda for creating the overarching structure for this course.</p>
 </section>"""
     (out / "index.html").write_text(
         page(SITE_TITLE, body, body_class="home",
