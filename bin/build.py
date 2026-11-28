@@ -793,7 +793,11 @@ def build_index(out, decks, built, quizzes, gallery):
 </section>
 <section id="credit">
 <h2>Credit</h2>
-<p>Thanks to Sanford Ikeda for creating the overarching structure for this course.</p>
+<p>Thanks to Sanford Ikeda for creating the overarching structure for this course.
+Ikeda is Professor Emeritus of Economics at Purchase College, SUNY, and the author of
+<cite>Dynamics of the Mixed Economy: Toward a Theory of Interventionism</cite> (Routledge, 1997) and
+<a href="https://link.springer.com/book/10.1007/978-981-99-5362-2"><cite>A City Cannot Be a Work of Art:
+Learning Economics and Social Theory from Jane Jacobs</cite></a> (Palgrave Macmillan, 2024).</p>
 </section>"""
     (out / "index.html").write_text(
         page(SITE_TITLE, body, body_class="home",
