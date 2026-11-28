@@ -109,6 +109,8 @@ DESCRIPTION = ("Is there a common set of social institutions or environments tha
 
 SITE_TITLE = "Cities, Culture and Economy"
 TAGLINE = "What Is a City?"
+AUTHOR = "Gene Callahan"
+HOME_URL = "https://gcallah.github.io/"  # the author's home page, linked from the front page
 SITE_URL = "https://gcallah.github.io/Cities/"  # absolute links for social-media previews
 OG_IMAGE = "graphics/og-image.jpg"  # drawn by bin/og_image.py
 FONTS_URL = ("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,800"
@@ -167,16 +169,17 @@ def page(title, body, root="", body_class="", hero=None, path=""):
     """Wrap body in the site chrome.
 
     root:  relative path from this page to the site root ("" or "../").
-    hero:  optional (kicker, heading, subtitle) for the page header.
+    hero:  optional (kicker, heading, subtitle[, byline]) for the page header.
     path:  this page's path from the site root, for its og:url.
     """
     hero_html = ""
     if hero:
-        kicker, heading, sub = hero
+        kicker, heading, sub, *byline = hero
         hero_html = f"""<header class="hero">
   {f'<p class="kicker">{kicker}</p>' if kicker else ''}
   <h1>{heading}</h1>
   {f'<p class="sub">{sub}</p>' if sub else ''}
+  {f'<p class="byline">{byline[0]}</p>' if byline else ''}
 </header>"""
     doc_title = SITE_TITLE if title == SITE_TITLE else f"{title} · {SITE_TITLE}"
     return f"""<!DOCTYPE html>
@@ -792,7 +795,8 @@ def build_index(out, decks, built, quizzes, gallery):
              hero=(esc(TAGLINE), SITE_TITLE,
                    "How cities arise, why they flourish, and what happens when planners try "
                    "to design them from above: from the polis to Le Corbusier, Hayek and "
-                   "Jane Jacobs.")),
+                   "Jane Jacobs.",
+                   f'A course by <a href="{HOME_URL}">{esc(AUTHOR)}</a>')),
         encoding="utf-8")
 
 

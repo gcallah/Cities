@@ -125,6 +125,8 @@ body.home .sheet { margin-top: clamp(0rem, 12vw, 9rem); }
 }
 .hero .sub { margin: 0.5rem 0 0; font-size: 1.15rem; font-style: italic; color: var(--muted); max-width: 40rem; }
 
+.hero .byline { margin: 1rem 0 0; font-family: var(--sans); font-weight: 600; font-size: 0.95rem; color: var(--muted); }
+.hero .byline a { color: var(--oxblood); }
 body.home .hero { padding-top: clamp(3rem, 8vw, 5.5rem); padding-bottom: clamp(2rem, 5vw, 3rem); }
 body.home .hero h1 { font-size: clamp(2.6rem, 7vw, 4.2rem); }
 body.home .hero .sub { font-size: clamp(1.15rem, 2.2vw, 1.35rem); }
